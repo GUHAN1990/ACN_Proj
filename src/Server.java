@@ -40,8 +40,9 @@ public class Server{
 
 class ServerThread extends Thread{
 
-    PrintWriter writer;
-    BufferedReader reader;
+//    PrintWriter writer;
+    DataOutputStream writer;
+    DataInputStream reader;
     Socket socket;
     int clientId;
 
@@ -55,20 +56,24 @@ class ServerThread extends Thread{
     public void run() {
         System.out.println("into run");
         try {
-            writer = new PrintWriter(socket.getOutputStream(), true);
-            reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            writer = new DataOutputStream(socket.getOutputStream());
+            reader = new DataInputStream(socket.getInputStream());
             File resource = new File("resources/sample.txt");
-            System.out.println(resource.getName());
-            BufferedReader fileReader = new BufferedReader(new FileReader(resource));
 
             int counter = 0;
+            byte[] inputBuffer = new byte[10];
             while(counter<=100) {
-                String msg = reader.readLine();
+                System.out.println("File received count" + counter);
+                reader.read(inputBuffer, 0,3);
+                String msg =new String(inputBuffer).trim();
+                System.out.println("received msg "+msg);
+
                 if (msg.equals("GET")) {
-                    sendFile(resource, socket, new ObjectOutputStream(socket.getOutputStream()));
+                    sendFile(resource, socket, writer);
+                    System.out.println("Done");
                 } else if (msg.equals("PUT")) {
-                    msg = reader.readLine();
-                    System.out.println("Received msg :" + msg);
+//                    msg = reader.readLine();
+//                    System.out.println("Received msg :" + msg);
                 } else if (msg.equals("QUIT")) {
                     System.exit(0);
                 }
@@ -80,18 +85,21 @@ class ServerThread extends Thread{
         }
     }
 
-    private static void sendFile(File dir, Socket sock, ObjectOutputStream oos ) throws Exception {
+    private static void sendFile(File dir, Socket sock, DataOutputStream oos ) throws Exception {
         byte[] buff = new byte[sock.getSendBufferSize()];
         int bytesRead = 0;
 
-        InputStream in = new FileInputStream(dir);
+        InputStream fileReader = new FileInputStream(dir);
+        long length = dir.length();
 
-        while((bytesRead = in.read(buff))>0) {
-            oos.write(buff,0,bytesRead);
+        oos.writeLong((int) length);
+
+        while((bytesRead = fileReader.read(buff))>0) {
+            oos.write(buff, 0, bytesRead);
         }
-        in.close();
-        // after sending a file you need to close the socket and reopen one.
         oos.flush();
+
+        fileReader.close();
     }
 
 

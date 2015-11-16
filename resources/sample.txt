@@ -1,1 +1,3 @@
-this is the file new content
+this is server 2=10 this is the input 
+
+

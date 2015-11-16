@@ -1,13 +1,12 @@
 import java.io.*;
 import java.net.Socket;
-import java.util.Scanner;
 
 /**
  * Created by priyadarshini on 11/14/15.
  */
 public class Client {
-    BufferedReader reader;
-    PrintWriter writer;
+    DataOutputStream writer;
+    DataInputStream reader;
 
     public static void main(String[] args) {
         Client client = new Client();
@@ -17,18 +16,20 @@ public class Client {
     private void createSocket() {
         try {
             Socket client = new Socket("127.0.0.1", 30000);
-            reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-            writer = new PrintWriter(client.getOutputStream(), true);
-            File file = new File("resources/Server/sample.txt");
+            reader = new DataInputStream(client.getInputStream());
+            writer = new DataOutputStream(client.getOutputStream());
+            File file = new File("resources/Client/sample.txt");
             int counter = 0;
+            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             while(counter<=100) {
-                Scanner sc = new Scanner(System.in);
-                String nextString = sc.next();
-                writer.println(nextString);
+                String nextString = br.readLine();
+                System.out.println(nextString);
+                writer.write(nextString.getBytes(), 0, 3);
                 if(nextString.equals("GET")){
-                    receiveFile(file, client, new ObjectInputStream(client.getInputStream()));
+                    receiveFile(file, client, reader);
                 } else if(nextString.equals("PUT")) {
-                    writer.println("this is the msg from client");
+                    String s = "this is the msg from client";
+                    writer.write(s.getBytes(), 0, s.length());
                 } else if(nextString.equals("QUIT")){
                     System.exit(0);
                 }
@@ -41,12 +42,15 @@ public class Client {
         }
     }
 
-    private static void receiveFile(File dir, Socket sock, ObjectInputStream ois ) throws Exception {
+    private static void receiveFile(File dir, Socket sock, DataInputStream ois ) throws Exception {
         FileOutputStream wr = new FileOutputStream(dir);
         byte[] outBuffer = new byte[sock.getReceiveBufferSize()];
         int bytesReceived = 0;
-        while((bytesReceived = ois.read(outBuffer))>0) {
+        long fileSize = ois.readLong();
+        while (fileSize > 0 && (bytesReceived = ois.read(outBuffer, 0, (int)Math.min(outBuffer.length, fileSize))) != -1)
+        {
             wr.write(outBuffer,0,bytesReceived);
+            fileSize -= bytesReceived;
         }
         wr.flush();
         wr.close();
