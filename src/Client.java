@@ -18,7 +18,7 @@ public class Client {
             Socket client = new Socket("127.0.0.1", 30000);
             reader = new DataInputStream(client.getInputStream());
             writer = new DataOutputStream(client.getOutputStream());
-            File file = new File("resources/Client/sample.txt");
+            File file = new File("resources/Client/Sample.doc");
             int counter = 0;
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             while(counter<=100) {
@@ -28,8 +28,7 @@ public class Client {
                 if(nextString.equals("GET")){
                     receiveFile(file, client, reader);
                 } else if(nextString.equals("PUT")) {
-                    String s = "this is the msg from client";
-                    writer.write(s.getBytes(), 0, s.length());
+                    sendFile(file, client, writer);
                 } else if(nextString.equals("QUIT")){
                     System.exit(0);
                 }
@@ -41,6 +40,24 @@ public class Client {
             e.printStackTrace();
         }
     }
+
+    private static void sendFile(File dir, Socket sock, DataOutputStream oos ) throws Exception {
+        byte[] buff = new byte[sock.getSendBufferSize()];
+        int bytesRead = 0;
+
+        InputStream fileReader = new FileInputStream(dir);
+        long length = dir.length();
+
+        oos.writeLong((int) length);
+
+        while((bytesRead = fileReader.read(buff))>0) {
+            oos.write(buff, 0, bytesRead);
+        }
+        oos.flush();
+
+        fileReader.close();
+    }
+
 
     private static void receiveFile(File dir, Socket sock, DataInputStream ois ) throws Exception {
         FileOutputStream wr = new FileOutputStream(dir);

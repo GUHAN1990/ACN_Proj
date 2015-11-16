@@ -58,7 +58,7 @@ class ServerThread extends Thread{
         try {
             writer = new DataOutputStream(socket.getOutputStream());
             reader = new DataInputStream(socket.getInputStream());
-            File resource = new File("resources/sample.txt");
+            File resource = new File("resources/Sample.doc");
 
             int counter = 0;
             byte[] inputBuffer = new byte[10];
@@ -72,8 +72,7 @@ class ServerThread extends Thread{
                     sendFile(resource, socket, writer);
                     System.out.println("Done");
                 } else if (msg.equals("PUT")) {
-//                    msg = reader.readLine();
-//                    System.out.println("Received msg :" + msg);
+                    receiveFile(resource, socket, reader);
                 } else if (msg.equals("QUIT")) {
                     System.exit(0);
                 }
@@ -102,5 +101,20 @@ class ServerThread extends Thread{
         fileReader.close();
     }
 
+
+    private static void receiveFile(File dir, Socket sock, DataInputStream ois ) throws Exception {
+        FileOutputStream wr = new FileOutputStream(dir);
+        byte[] outBuffer = new byte[sock.getReceiveBufferSize()];
+        int bytesReceived = 0;
+        long fileSize = ois.readLong();
+        while (fileSize > 0 && (bytesReceived = ois.read(outBuffer, 0, (int)Math.min(outBuffer.length, fileSize))) != -1)
+        {
+            wr.write(outBuffer,0,bytesReceived);
+            fileSize -= bytesReceived;
+        }
+        wr.flush();
+        wr.close();
+
+    }
 
 }
