@@ -85,7 +85,7 @@ class ServerThread extends Thread{
                 } else if (commandAndFile[0].equals("PUTF")) {
                     receiveFile(file, socket, reader);
                 } else if (commandAndFile[0].equals("SYNC")) {
-                    sendDirectoryStructure();
+                    sendDirectoryStructure(commandAndFile[1]);
                 }else if (commandAndFile[0].equals("QUIT")) {
                     System.exit(0);
                 }
@@ -97,11 +97,12 @@ class ServerThread extends Thread{
         }
     }
 
-    private void sendDirectoryStructure() {
-        File file = new File("resources/");
-        Directory rootDirectory = new Directory(file.getName());
+    private void sendDirectoryStructure(String dirName) {
+        File file = new File(dirName);
+        Directory rootDirectory = new Directory(dirName);
 
         rootDirectory.populateDirectory(file.listFiles());
+        System.out.println(rootDirectory);
 
         sendObject(rootDirectory);
     }
