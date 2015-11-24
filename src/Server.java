@@ -24,6 +24,8 @@ public class Server{
         server.startServer();
     }
 
+
+
     private void startServer() {
         try {
             int count = 1;
@@ -43,43 +45,71 @@ class ServerThread extends Thread{
 //    PrintWriter writer;
     DataOutputStream writer;
     DataInputStream reader;
+    ObjectInputStream readerObj;
+    ObjectOutputStream writerObj;
+    Directory rootDirectory;
+
+
     Socket socket;
     int clientId;
 
     ServerThread(Socket socket, int count){
         this.socket = socket;
         this.clientId = count;
+//        this.rootDirectory = rootDirectory;
         start();
     }
 
     @Override
     public void run() {
-        System.out.println("into run");
+
         try {
+            writerObj = new ObjectOutputStream(socket.getOutputStream());
             writer = new DataOutputStream(socket.getOutputStream());
             reader = new DataInputStream(socket.getInputStream());
-            File resource = new File("resources/Sample.doc");
 
             int counter = 0;
-            byte[] inputBuffer = new byte[10];
             while(counter<=100) {
                 System.out.println("File received count" + counter);
-                reader.read(inputBuffer, 0,3);
+                int commandSize = (int)reader.readLong();
+                byte[] inputBuffer = new byte[commandSize];
+                reader.read(inputBuffer, 0, commandSize);
                 String msg =new String(inputBuffer).trim();
-                System.out.println("received msg "+msg);
+                System.out.println("Received msg "+msg);
+                String[] commandAndFile = msg.split("\\s+");
+                File file = new File(commandAndFile[1]);
 
-                if (msg.equals("GET")) {
-                    sendFile(resource, socket, writer);
+                if (commandAndFile[0].equals("GETF")) {
+                    sendFile(file, socket, writer);
                     System.out.println("Done");
-                } else if (msg.equals("PUT")) {
-                    receiveFile(resource, socket, reader);
-                } else if (msg.equals("QUIT")) {
+                } else if (commandAndFile[0].equals("PUTF")) {
+                    receiveFile(file, socket, reader);
+                } else if (commandAndFile[0].equals("SYNC")) {
+                    sendDirectoryStructure();
+                }else if (commandAndFile[0].equals("QUIT")) {
                     System.exit(0);
                 }
                 counter++;
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendDirectoryStructure() {
+        File file = new File("resources/");
+        Directory rootDirectory = new Directory(file.getName());
+
+        rootDirectory.populateDirectory(file.listFiles());
+
+        sendObject(rootDirectory);
+    }
+
+    private void sendObject(Directory rootDirectory) {
+        try {
+            writerObj.writeObject(rootDirectory);
+        } catch(Exception e){
             e.printStackTrace();
         }
     }
@@ -116,5 +146,6 @@ class ServerThread extends Thread{
         wr.close();
 
     }
+
 
 }
