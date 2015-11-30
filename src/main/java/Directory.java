@@ -47,12 +47,12 @@ public class Directory implements Serializable{
 
         Directory directory = (Directory) o;
 
-        if (directoryList != null ? !directoryList.equals(directory.directoryList) : directory.directoryList != null)
-            return false;
+//        if (directoryList != null ? !directoryList.equals(directory.directoryList) : directory.directoryList != null)
+//            return false;
         if (directoryName != null ? !directoryName.equals(directory.directoryName) : directory.directoryName != null)
             return false;
-        if (fileDetailsList != null ? !fileDetailsList.equals(directory.fileDetailsList) : directory.fileDetailsList != null)
-            return false;
+//        if (fileDetailsList != null ? !fileDetailsList.equals(directory.fileDetailsList) : directory.fileDetailsList != null)
+//            return false;
 
         return true;
     }
@@ -81,5 +81,9 @@ public class Directory implements Serializable{
 //                System.out.println("File: " + file.getName());
             }
         }
+    }
+
+    public boolean containsDir(Directory dir) {
+        return directoryList.contains(dir);
     }
 }

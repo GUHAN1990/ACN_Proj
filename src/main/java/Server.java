@@ -2,18 +2,15 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-/**
- * Created by priyadarshini on 11/14/15.
- */
-public class Server{
+public class Server {
 
     ServerSocket serverSocket;
 
-    Server(){
+    Server() {
         try {
             serverSocket = new ServerSocket(30000);
 
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -25,7 +22,6 @@ public class Server{
     }
 
 
-
     private void startServer() {
         try {
             int count = 1;
@@ -34,15 +30,15 @@ public class Server{
                 ServerThread serverThread = new ServerThread(socket, count);
                 count++;
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 }
 
-class ServerThread extends Thread{
+class ServerThread extends Thread {
 
-//    PrintWriter writer;
+    //    PrintWriter writer;
     DataOutputStream writer;
     DataInputStream reader;
     ObjectInputStream readerObj;
@@ -53,7 +49,7 @@ class ServerThread extends Thread{
     Socket socket;
     int clientId;
 
-    ServerThread(Socket socket, int count){
+    ServerThread(Socket socket, int count) {
         this.socket = socket;
         this.clientId = count;
 //        this.rootDirectory = rootDirectory;
@@ -69,24 +65,32 @@ class ServerThread extends Thread{
             reader = new DataInputStream(socket.getInputStream());
 
             int counter = 0;
-            while(counter<=100) {
+            while (counter <= 100) {
                 System.out.println("File received count" + counter);
-                int commandSize = (int)reader.readLong();
+                int commandSize = (int) reader.readLong();
                 byte[] inputBuffer = new byte[commandSize];
                 reader.read(inputBuffer, 0, commandSize);
-                String msg =new String(inputBuffer).trim();
-                System.out.println("Received msg "+msg);
+                String msg = new String(inputBuffer).trim();
+                System.out.println("Received msg " + msg);
                 String[] commandAndFile = msg.split("\\s+");
                 File file = new File(commandAndFile[1]);
 
                 if (commandAndFile[0].equals("GETF")) {
-                    sendFile(file, socket, writer);
+//                    sendFile(file, socket, writer);
+                    if (file.isDirectory()) {
+
+                        putfDirectory(file, socket, writer);
+                    } else {
+                        sendFile(file, socket, writer);
+                    }
+
                     System.out.println("Done");
                 } else if (commandAndFile[0].equals("PUTF")) {
+                    getf(file, socket, reader);
                     receiveFile(file, socket, reader);
                 } else if (commandAndFile[0].equals("SYNC")) {
                     sendDirectoryStructure(commandAndFile[1]);
-                }else if (commandAndFile[0].equals("QUIT")) {
+                } else if (commandAndFile[0].equals("QUIT")) {
                     System.exit(0);
                 }
                 counter++;
@@ -110,12 +114,44 @@ class ServerThread extends Thread{
     private void sendObject(Directory rootDirectory) {
         try {
             writerObj.writeObject(rootDirectory);
-        } catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private static void sendFile(File dir, Socket sock, DataOutputStream oos ) throws Exception {
+    private void putfDirectory(File file, Socket sock, DataOutputStream reader) {
+        Directory dir = new Directory(file.getName());
+        dir.populateDirectory(file.listFiles());
+        sendObject(dir);
+        String path = file.getPath();
+        putf(dir, sock, reader, path);
+
+    }
+
+    private void putf(Directory dir, Socket sock, DataOutputStream reader, String path) {
+        try {
+
+            System.out.println(path);
+            for (Directory directory : dir.directoryList) {
+                File inputFile = new File(directory.getDirectoryName());
+                if (inputFile.isDirectory()) {
+                    putf(directory, sock, reader, inputFile.getPath());
+                } else {
+                    sendFile(inputFile, sock, reader);
+                }
+            }
+            for(FileDetails fileDetails : dir.fileDetailsList) {
+                File inputFile = new File(path + "/" + fileDetails.fileName);
+                sendFile(inputFile, sock, reader);
+            }
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void sendFile(File dir, Socket sock, DataOutputStream oos) throws Exception {
         byte[] buff = new byte[sock.getSendBufferSize()];
         int bytesRead = 0;
 
@@ -124,7 +160,7 @@ class ServerThread extends Thread{
 
         oos.writeLong((int) length);
 
-        while((bytesRead = fileReader.read(buff))>0) {
+        while ((bytesRead = fileReader.read(buff)) > 0) {
             oos.write(buff, 0, bytesRead);
         }
         oos.flush();
@@ -133,14 +169,36 @@ class ServerThread extends Thread{
     }
 
 
-    private static void receiveFile(File dir, Socket sock, DataInputStream ois ) throws Exception {
+    private void getf(File fileInput, Socket sock, DataInputStream reader) {
+        try {
+
+            if (fileInput.isDirectory()) {
+                File[] files = fileInput.listFiles();
+                for (File file : files) {
+                    receiveFile(file, sock, reader);
+                }
+            }
+            receiveFile(fileInput, sock, reader);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+    private static void receiveFile(File dir, Socket sock, DataInputStream ois) throws Exception {
+        System.out.println(dir.getPath());
+        if(!dir.exists()){
+            dir.createNewFile();
+        }
+
         FileOutputStream wr = new FileOutputStream(dir);
         byte[] outBuffer = new byte[sock.getReceiveBufferSize()];
         int bytesReceived = 0;
         long fileSize = ois.readLong();
-        while (fileSize > 0 && (bytesReceived = ois.read(outBuffer, 0, (int)Math.min(outBuffer.length, fileSize))) != -1)
-        {
-            wr.write(outBuffer,0,bytesReceived);
+        while (fileSize > 0 && (bytesReceived = ois.read(outBuffer, 0, (int) Math.min(outBuffer.length, fileSize))) != -1) {
+            wr.write(outBuffer, 0, bytesReceived);
             fileSize -= bytesReceived;
         }
         wr.flush();
