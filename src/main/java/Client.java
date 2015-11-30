@@ -25,6 +25,7 @@ public class Client {
 
             client = new Socket("127.0.0.1", 30000);
             readerObj = new ObjectInputStream(client.getInputStream());
+            writerObj = new ObjectOutputStream(client.getOutputStream());
             reader = new DataInputStream(client.getInputStream());
             writer = new DataOutputStream(client.getOutputStream());
             File file = new File("resources/Client/sample.txt");
@@ -90,27 +91,31 @@ public class Client {
                         if (root2.containsDir(dir)) {
                             System.out.println("found in both client and server!");
                             checkDirectory(dir, dir, path);
-                            System.out.println(dir);
                         } else {
                             System.out.println("found in root alone");
-                            System.out.println(path + dir.getDirectoryName());
                             sendCommand("GETDIRECTORY " + path + dir.getDirectoryName());
-                            System.out.println(dir);
                         }
                     } else if (root2.containsDir(dir)) {
                         System.out.println("found in client alone");
                         System.out.println(path + dir.getDirectoryName());
-                        sendCommand("PUTF " + path + dir.getDirectoryName());
-                        System.out.println(dir);
+                        sendCommand("PUTDIRECTORY " + path + dir.getDirectoryName());
                     }
                 }
             }
-            if (root1.fileDetailsList.size() == root2.fileDetailsList.size()) {
-                for (int i = 0; i < root1.fileDetailsList.size(); i++) {
-                    boolean isEqual = checkIfEqual(root1.fileDetailsList.get(i), root2.fileDetailsList.get(i));
-                    if (!isEqual) {
-                        String filePath = path + root2.fileDetailsList.get(i).fileName;
-                        getFile(filePath);
+            List<FileDetails> combinedFileList = createCombinedFileList(root1.fileDetailsList, root2.fileDetailsList);
+            if (combinedFileList.size() != root1.fileDetailsList.size() || combinedFileList.size() != root2.fileDetailsList.size()) {
+                for (FileDetails dir : combinedFileList) {
+                    if (root1.containsFile(dir)) {
+                        if (root2.containsFile(dir)) {
+                            System.out.println("found in both client and server!");
+                        } else {
+                            System.out.println("found in root alone");
+                            sendCommand("GETF " + path + dir.fileName);
+                        }
+                    } else if (root2.containsFile(dir)) {
+                        System.out.println("found in client alone");
+                        System.out.println(path + dir.fileName);
+                        sendCommand("PUTF " + path + dir.fileName);
                     }
                 }
             }
@@ -163,32 +168,10 @@ public class Client {
                 receiveFile(file, reader);
             } else if (commandAndFile[0].equals("GETDIRECTORY")) {
                 getfDirectory(file, reader);
+            } else if (commandAndFile[0].equals("PUTDIRECTORY")) {
+                putfDirectory(file, writer);
             } else if (commandAndFile[0].equals("PUTF")) {
-                putf(file, writer);
-            } else if (commandAndFile[0].equals("SYNC")) {
-                receiveDirectoryStructure();
-            } else if (commandAndFile[0].equals("QUIT")) {
-                System.exit(0);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void sendCommand1(String nextString) {
-        try {
-            System.out.println(nextString);
-            long length = nextString.length();
-
-            writer.writeLong((int) length);
-
-            writer.write(nextString.getBytes(), 0, nextString.length());
-            String[] commandAndFile = nextString.split("\\s+");
-            File file = new File(baseDirectory + commandAndFile[1]);
-            if (commandAndFile[0].equals("GETDIRECTORY")) {
-                    getfDirectory(file, reader);
-            } else if (commandAndFile[0].equals("PUTF")) {
-                putf(file, writer);
+                sendFile(file, writer);
             } else if (commandAndFile[0].equals("SYNC")) {
                 receiveDirectoryStructure();
             } else if (commandAndFile[0].equals("QUIT")) {
@@ -221,6 +204,46 @@ public class Client {
             for(FileDetails fileDetails : dir.fileDetailsList) {
                 File inputFile = new File(path + "/" + fileDetails.fileName);
                 receiveFile(inputFile, reader);
+            }
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendObject(Directory rootDirectory) {
+        try {
+            writerObj.writeObject(rootDirectory);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void putfDirectory(File file, DataOutputStream reader) {
+        Directory dir = new Directory(file.getName());
+        dir.populateDirectory(file.listFiles());
+        sendObject(dir);
+        String path = file.getPath();
+        putf(dir, reader, path);
+
+    }
+
+    private void putf(Directory dir, DataOutputStream reader, String path) {
+        try {
+
+            System.out.println(path);
+            for (Directory directory : dir.directoryList) {
+                File inputFile = new File(directory.getDirectoryName());
+                if (inputFile.isDirectory()) {
+                    putf(directory, reader, inputFile.getPath());
+                } else {
+                    sendFile(inputFile, reader);
+                }
+            }
+            for(FileDetails fileDetails : dir.fileDetailsList) {
+                File inputFile = new File(path + "/" + fileDetails.fileName);
+                sendFile(inputFile, reader);
             }
 
 

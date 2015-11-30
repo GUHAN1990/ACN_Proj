@@ -61,6 +61,7 @@ class ServerThread extends Thread {
 
         try {
             writerObj = new ObjectOutputStream(socket.getOutputStream());
+            readerObj = new ObjectInputStream(socket.getInputStream());
             writer = new DataOutputStream(socket.getOutputStream());
             reader = new DataInputStream(socket.getInputStream());
 
@@ -76,23 +77,19 @@ class ServerThread extends Thread {
                 File file = new File(commandAndFile[1]);
 
                 if (commandAndFile[0].equals("GETF")) {
-//                    sendFile(file, socket, writer);
-                    if (file.isDirectory()) {
-
-                        putfDirectory(file, socket, writer);
-                    } else {
-                        sendFile(file, socket, writer);
-                    }
-
-                    System.out.println("Done");
+                    sendFile(file, socket, writer);
+                } else if (commandAndFile[0].equals("PUTDIRECTORY")) {
+                    getfDirectory(file, socket, reader);
+                } else if (commandAndFile[0].equals("GETDIRECTORY")) {
+                    putfDirectory(file, socket, writer);
                 } else if (commandAndFile[0].equals("PUTF")) {
-                    getf(file, socket, reader);
                     receiveFile(file, socket, reader);
                 } else if (commandAndFile[0].equals("SYNC")) {
                     sendDirectoryStructure(commandAndFile[1]);
                 } else if (commandAndFile[0].equals("QUIT")) {
                     System.exit(0);
                 }
+                System.out.println("Done");
                 counter++;
             }
 
@@ -143,6 +140,49 @@ class ServerThread extends Thread {
             for(FileDetails fileDetails : dir.fileDetailsList) {
                 File inputFile = new File(path + "/" + fileDetails.fileName);
                 sendFile(inputFile, sock, reader);
+            }
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Directory receiveObject() {
+        Directory dirObj = null;
+        try {
+            dirObj = (Directory) readerObj.readObject();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return dirObj;
+
+    }
+
+    private void getfDirectory(File file, Socket sock, DataInputStream reader) {
+        Directory directory = receiveObject();
+        System.out.println(file.getPath());
+        getf(directory, sock, reader, file.getPath());
+
+    }
+
+    private void getf(Directory dir,Socket sock, DataInputStream reader, String path) {
+        try {
+            System.out.println(path);
+            System.out.println(dir.getDirectoryName());
+            File file = new File(path);
+            if(!file.exists()){
+                file.mkdir();
+            }
+            System.out.println(dir.getDirectoryName());
+            for (Directory directory : dir.directoryList) {
+                getf(directory, sock, reader, path);
+            }
+            for(FileDetails fileDetails : dir.fileDetailsList) {
+                File inputFile = new File(path + "/" + fileDetails.fileName);
+                receiveFile(inputFile, sock, reader);
             }
 
 

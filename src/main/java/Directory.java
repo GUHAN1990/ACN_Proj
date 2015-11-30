@@ -86,4 +86,10 @@ public class Directory implements Serializable{
     public boolean containsDir(Directory dir) {
         return directoryList.contains(dir);
     }
+
+    public boolean containsFile(FileDetails fileDetails) {
+        return fileDetailsList.contains(fileDetails);
+    }
+
+
 }
