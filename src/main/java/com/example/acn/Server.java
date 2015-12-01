@@ -40,7 +40,6 @@ public class Server {
 
 class ServerThread extends Thread {
 
-    //    PrintWriter writer;
     DataOutputStream writer;
     DataInputStream reader;
     ObjectInputStream readerObj;
@@ -54,7 +53,6 @@ class ServerThread extends Thread {
     ServerThread(Socket socket, int count) {
         this.socket = socket;
         this.clientId = count;
-//        this.rootDirectory = rootDirectory;
         start();
     }
 
@@ -67,37 +65,103 @@ class ServerThread extends Thread {
             writer = new DataOutputStream(socket.getOutputStream());
             reader = new DataInputStream(socket.getInputStream());
 
-            int counter = 0;
-            while (counter <= 100) {
-                System.out.println("File received count" + counter);
+            int counter = 1;
+            while (true) {
+                System.out.println("File received request count : " + counter);
                 int commandSize = (int) reader.readLong();
                 byte[] inputBuffer = new byte[commandSize];
                 reader.read(inputBuffer, 0, commandSize);
                 String msg = new String(inputBuffer).trim();
-                System.out.println("Received msg " + msg);
+                System.out.println("Received command " + msg);
                 String[] commandAndFile = msg.split("\\s+");
+                if (commandAndFile.length != 2) {
+                    System.out.println("Invalid Input! Invalid input from client! ");
+                    return;
+                }
                 File file = new File(commandAndFile[1]);
 
                 if (commandAndFile[0].equals("GETF")) {
-                    sendFile(file, socket, writer);
+                    if (getStatus(file)) {
+                        sendFile(file, socket, writer);
+                    }
                 } else if (commandAndFile[0].equals("PUTDIRECTORY")) {
                     getfDirectory(file, socket, reader);
                 } else if (commandAndFile[0].equals("GETDIRECTORY")) {
                     putfDirectory(file, socket, writer);
                 } else if (commandAndFile[0].equals("PUTF")) {
                     receiveFile(file, socket, reader);
+                    System.out.println("File uploaded successfully!");
                 } else if (commandAndFile[0].equals("SYNC")) {
-                    sendDirectoryStructure(commandAndFile[1]);
+                    if (getSyncStatus(file)) {
+                            sendDirectoryStructure(commandAndFile[1]);
+                    }
                 } else if (commandAndFile[0].equals("QUIT")) {
                     System.exit(0);
+                } else {
+                    System.out.println("Invalid Input! Invalid input from client! ");
                 }
-                System.out.println("Done");
+                System.out.println("Command done!");
                 counter++;
             }
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private boolean getSyncStatus(File file) {
+        try {
+
+            if (file.exists() && file.isDirectory()) {
+                String msg = "Successful!";
+                System.out.println(msg);
+                long length = msg.length();
+
+                writer.writeLong((int) length);
+
+                writer.write(msg.getBytes(), 0, msg.length());
+            } else {
+
+                String msg = "Error in input file!";
+                System.out.println(msg);
+                long length = msg.length();
+
+                writer.writeLong((int) length);
+
+                writer.write(msg.getBytes(), 0, msg.length());
+                return false;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    private boolean getStatus(File file) {
+        try {
+
+            if (!file.exists()) {
+                String msg = "Error in input file!";
+                System.out.println(msg);
+                long length = msg.length();
+
+                writer.writeLong((int) length);
+
+                writer.write(msg.getBytes(), 0, msg.length());
+                return false;
+            } else {
+                String msg = "Successful!";
+                System.out.println(msg);
+                long length = msg.length();
+
+                writer.writeLong((int) length);
+
+                writer.write(msg.getBytes(), 0, msg.length());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return true;
     }
 
     private void sendDirectoryStructure(String dirName) {
@@ -139,7 +203,7 @@ class ServerThread extends Thread {
                     sendFile(inputFile, sock, reader);
                 }
             }
-            for(FileDetails fileDetails : dir.fileDetailsList) {
+            for (FileDetails fileDetails : dir.fileDetailsList) {
                 File inputFile = new File(path + "/" + fileDetails.fileName);
                 sendFile(inputFile, sock, reader);
             }
@@ -170,19 +234,19 @@ class ServerThread extends Thread {
 
     }
 
-    private void getf(Directory dir,Socket sock, DataInputStream reader, String path) {
+    private void getf(Directory dir, Socket sock, DataInputStream reader, String path) {
         try {
             System.out.println(path);
             System.out.println(dir.getDirectoryName());
             File file = new File(path);
-            if(!file.exists()){
+            if (!file.exists()) {
                 file.mkdir();
             }
             System.out.println(dir.getDirectoryName());
             for (Directory directory : dir.directoryList) {
                 getf(directory, sock, reader, path);
             }
-            for(FileDetails fileDetails : dir.fileDetailsList) {
+            for (FileDetails fileDetails : dir.fileDetailsList) {
                 File inputFile = new File(path + "/" + fileDetails.fileName);
                 receiveFile(inputFile, sock, reader);
             }
@@ -210,28 +274,10 @@ class ServerThread extends Thread {
         fileReader.close();
     }
 
-
-    private void getf(File fileInput, Socket sock, DataInputStream reader) {
-        try {
-
-            if (fileInput.isDirectory()) {
-                File[] files = fileInput.listFiles();
-                for (File file : files) {
-                    receiveFile(file, sock, reader);
-                }
-            }
-            receiveFile(fileInput, sock, reader);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
-
     private static void receiveFile(File dir, Socket sock, DataInputStream ois) throws Exception {
         System.out.println(dir.getPath());
-        if(!dir.exists()){
+        if (!dir.exists()) {
+            dir.getParentFile().mkdirs();
             dir.createNewFile();
         }
 

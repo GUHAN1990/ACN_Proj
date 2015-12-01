@@ -1,1 +1,1 @@
-file 1 changed in client
+PUTF resources/hello/file1.txt

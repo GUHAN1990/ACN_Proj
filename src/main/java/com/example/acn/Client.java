@@ -54,7 +54,7 @@ public class Client {
             rootDirectory.populateDirectory(currentDirectory.listFiles());
             checkDirectory(receivedDirectory, rootDirectory, "");
         } else {
-            System.out.println("not pro dir");
+            System.out.println("Not proper directory!");
         }
 
     }
@@ -143,37 +143,64 @@ public class Client {
         return newList;
     }
 
-    private void getFile(String filePath) {
-        sendCommand("GETF " + filePath);
-
-    }
-
     private void sendCommand(String nextString) {
         try {
             System.out.println(nextString);
+            String[] commandAndFile = nextString.split("\\s+");
+
+            if(commandAndFile.length!=2){
+                System.out.println("Invalid Input! Invalid input from client! ");
+                return;
+            }
+
             long length = nextString.length();
 
             writer.writeLong((int) length);
 
             writer.write(nextString.getBytes(), 0, nextString.length());
-            String[] commandAndFile = nextString.split("\\s+");
             File file = new File(baseDirectory + commandAndFile[1]);
             if (commandAndFile[0].equals("GETF")) {
-                receiveFile(file, reader);
+                if(getStatus())
+                    receiveFile(file, reader);
             } else if (commandAndFile[0].equals("GETDIRECTORY")) {
                 getfDirectory(file, reader);
             } else if (commandAndFile[0].equals("PUTDIRECTORY")) {
                 putfDirectory(file, writer);
             } else if (commandAndFile[0].equals("PUTF")) {
-                sendFile(file, writer);
+                if(file.exists()) {
+                    sendFile(file, writer);
+                } else {
+                    System.out.println("Error in input file!");
+                }
             } else if (commandAndFile[0].equals("SYNC")) {
-                receiveDirectoryStructure();
+                if(getStatus())
+                    receiveDirectoryStructure();
             } else if (commandAndFile[0].equals("QUIT")) {
                 System.exit(0);
+            } else {
+                System.out.println("Invalid Input! Please enter valid input!");
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private boolean getStatus() {
+        int commandSize = 0;
+        try {
+            commandSize = (int) reader.readLong();
+
+            byte[] inputBuffer = new byte[commandSize];
+            reader.read(inputBuffer, 0, commandSize);
+            String msg = new String(inputBuffer).trim();
+            System.out.println("Status :" + msg);
+            if(msg.contains("Error")){
+                return false;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return true;
     }
 
     private void getfDirectory(File file, DataInputStream reader) {

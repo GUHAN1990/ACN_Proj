@@ -1,0 +1,1 @@
+PUTF resources/sample.txt
