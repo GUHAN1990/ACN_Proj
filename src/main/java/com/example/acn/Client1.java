@@ -1,4 +1,4 @@
-//import java.io.*;
+package com.example.acn;//import java.io.*;
 //import java.net.Socket;
 //import java.util.ArrayList;
 //import java.util.List;
@@ -6,7 +6,7 @@
 ///**
 // * Created by priyadarshini on 11/14/15.
 // */
-//public class Client {
+//public class Client1 {
 //    DataOutputStream writer;
 //    DataInputStream reader;
 //    ObjectInputStream readerObj;
@@ -24,14 +24,14 @@
 //        try {
 //
 //            client = new Socket("127.0.0.1", 30000);
+////            Socket client = new Socket("127.0.0.1", 30000);
 //            readerObj = new ObjectInputStream(client.getInputStream());
-//            writerObj = new ObjectOutputStream(client.getOutputStream());
 //            reader = new DataInputStream(client.getInputStream());
 //            writer = new DataOutputStream(client.getOutputStream());
+//            File file = new File("resources/Client/sample.txt");
 //            int counter = 0;
 //            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 //            while (counter <= 100) {
-//                System.out.println("Please enter a command: ");
 //                String nextString = br.readLine();
 //                sendCommand(nextString);
 //
@@ -51,6 +51,11 @@
 //            Directory rootDirectory = new Directory(directoryName);
 //            rootDirectory.populateDirectory(currentDirectory.listFiles());
 //            checkDirectory(receivedDirectory, rootDirectory, "");
+//            if (receivedDirectory.equals(rootDirectory)) {
+//                System.out.println("equal");
+//            } else {
+//                System.out.println("not equal");
+//            }
 //        } else {
 //            System.out.println("not pro dir");
 //        }
@@ -77,42 +82,52 @@
 //        path = path + root2.getDirectoryName() + "/";
 //        if (checkIfEqual(root1, root2)) {
 //            List<Directory> combinedList = createCombinedList(root1.directoryList, root2.directoryList);
+//            System.out.println(combinedList.size());
+//            System.out.println(root1.directoryList.size());
+//            System.out.println(root2.directoryList.size());
+//            if (combinedList.size() != root1.directoryList.size() || combinedList.size() != root2.directoryList.size()) {
 //                for (Directory dir : combinedList) {
 //                    if (root1.containsDir(dir)) {
 //                        if (root2.containsDir(dir)) {
-//                            Directory firstFile = root1.getByDirectoryName(dir.getDirectoryName());
-//                            Directory secondFile = root2.getByDirectoryName(dir.getDirectoryName());
-//                            checkDirectory(firstFile, secondFile, path);
+//                            System.out.println("found in both client and server!");
+//                            checkDirectory(dir, dir, path);
+//                            System.out.println(dir);
 //                        } else {
-//                            sendCommand("GETDIRECTORY " + path + dir.getDirectoryName());
+//                            System.out.println("found in root alone");
+//                            //send command getf for folder
+//                            System.out.println(path + dir.getDirectoryName());
+//                            sendCommand1("GETF " + path + dir.getDirectoryName(), dir);
+//                            System.out.println(dir);
 //                        }
 //                    } else if (root2.containsDir(dir)) {
+//                        System.out.println("found in client alone");
+//                        //send command putf for folder
 //                        System.out.println(path + dir.getDirectoryName());
-//                        sendCommand("PUTDIRECTORY " + path + dir.getDirectoryName());
-//                    }
-//                }
-//            List<FileDetails> combinedFileList = createCombinedFileList(root1.fileDetailsList, root2.fileDetailsList);
-//                for (FileDetails dir : combinedFileList) {
-//                    if (root1.containsFile(dir)) {
-//                        if (root2.containsFile(dir)) {
-//                            FileDetails firstFile = root1.getByFileName(dir.fileName);
-//                            FileDetails secondFile = root2.getByFileName(dir.fileName);
-//                            if(!firstFile.isSame(secondFile)) {
-//                                if (firstFile.isLatestFile(secondFile)) {
-//                                    sendCommand("GETF " + path + dir.fileName);
-//                                } else {
-//                                    sendCommand("PUTF " + path + dir.fileName);
-//                                }
-//                            }
-//
-//                        } else {
-//                            sendCommand("GETF " + path + dir.fileName);
-//                        }
-//                    } else if (root2.containsFile(dir)) {
-//                        sendCommand("PUTF " + path + dir.fileName);
+//                        sendCommand("PUTF " + path + dir.getDirectoryName());
+//                        System.out.println(dir);
 //                    }
 //                }
 //            }
+////            for (int j=0; j< root2.directoryList.size(); j++){
+////                for (int i=0; i< root1.directoryList.size(); i++){
+////                    Directory rootDir2 = root2.directoryList.get(j);
+////                    Directory rootDir1 = root2.directoryList.get(i);
+//////                    System.out.println(rootDir1.directoryName.equals(rootDir2.getDirectoryName()));
+//////                    System.out.println(rootDir2.directoryName + " " + rootDir1.getDirectoryName());
+////                    isEqualDirectory = checkDirectory(root1.directoryList.get(i), rootDir2, path);
+////                }
+////            }
+//            if (root1.fileDetailsList.size() == root2.fileDetailsList.size()) {
+//                for (int i = 0; i < root1.fileDetailsList.size(); i++) {
+//                    boolean isEqual = checkIfEqual(root1.fileDetailsList.get(i), root2.fileDetailsList.get(i));
+//                    if (!isEqual) {
+//                        String filePath = path + root2.fileDetailsList.get(i).fileName;
+////                        System.out.println("File " + filePath + "is not equal!");
+//                        getFile(filePath);
+//                    }
+//                }
+//            }
+//        }
 //        return isEqualDirectory;
 //    }
 //
@@ -125,6 +140,7 @@
 //            if (!newList.contains(dir))
 //                newList.add(dir);
 //        }
+////        System.out.println(newList.size());
 //        return newList;
 //    }
 //
@@ -142,6 +158,7 @@
 //    }
 //
 //    private void getFile(String filePath) {
+//        System.out.println("File " + filePath + " has been received!");
 //        sendCommand("GETF " + filePath);
 //
 //    }
@@ -157,13 +174,11 @@
 //            String[] commandAndFile = nextString.split("\\s+");
 //            File file = new File(baseDirectory + commandAndFile[1]);
 //            if (commandAndFile[0].equals("GETF")) {
-//                receiveFile(file, reader);
-//            } else if (commandAndFile[0].equals("GETDIRECTORY")) {
-//                getfDirectory(file, reader);
-//            } else if (commandAndFile[0].equals("PUTDIRECTORY")) {
-//                putfDirectory(file, writer);
+//                getf(file, reader);
+//                //receiveFile(file, reader);
 //            } else if (commandAndFile[0].equals("PUTF")) {
-//                sendFile(file, writer);
+//                putf(file, writer);
+////                sendFile(file, writer);
 //            } else if (commandAndFile[0].equals("SYNC")) {
 //                receiveDirectoryStructure();
 //            } else if (commandAndFile[0].equals("QUIT")) {
@@ -174,74 +189,53 @@
 //        }
 //    }
 //
-//    private void getfDirectory(File file, DataInputStream reader) {
-//        Directory directory = receiveObject();
-//        System.out.println(file.getPath());
-//        getf(directory, reader, file.getPath());
-//
-//    }
-//
-//    private void getf(Directory dir,  DataInputStream reader, String path) {
+//    private void sendCommand1(String nextString) {
 //        try {
-//            System.out.println(path);
-//            System.out.println(dir.getDirectoryName());
-//            File file = new File(path);
-//            if(!file.exists()){
-//                file.mkdir();
-//            }
-//            System.out.println(dir.getDirectoryName());
-//            for (Directory directory : dir.directoryList) {
-//                    getf(directory, reader, path);
-//            }
-//            for(FileDetails fileDetails : dir.fileDetailsList) {
-//                File inputFile = new File(path + "/" + fileDetails.fileName);
-//                receiveFile(inputFile, reader);
-//            }
+//            System.out.println(nextString);
+//            long length = nextString.length();
 //
+//            writer.writeLong((int) length);
 //
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void sendObject(Directory rootDirectory) {
-//        try {
-//            writerObj.writeObject(rootDirectory);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void putfDirectory(File file, DataOutputStream reader) {
-//        Directory dir = new Directory(file.getName());
-//        dir.populateDirectory(file.listFiles());
-//        sendObject(dir);
-//        String path = file.getPath();
-//        putf(dir, reader, path);
-//
-//    }
-//
-//    private void putf(Directory dir, DataOutputStream reader, String path) {
-//        try {
-//
-//            System.out.println(path);
-//            for (Directory directory : dir.directoryList) {
-//                File inputFile = new File(directory.getDirectoryName());
-//                if (inputFile.isDirectory()) {
-//                    putf(directory, reader, inputFile.getPath());
+//            writer.write(nextString.getBytes(), 0, nextString.length());
+//            String[] commandAndFile = nextString.split("\\s+");
+//            File file = new File(baseDirectory + commandAndFile[1]);
+//            if (commandAndFile[0].equals("GETF")) {
+//                if(file.isDirectory()){
+//                    Directory dir = new Directory(file.getName());
+//                    dir.populateDirectory(file.listFiles());
+//                    getf(reader, dir);
 //                } else {
-//                    sendFile(inputFile, reader);
+//                    receiveFile(file, reader);
 //                }
+//            } else if (commandAndFile[0].equals("PUTF")) {
+//                putf(file, writer);
+////                sendFile(file, writer);
+//            } else if (commandAndFile[0].equals("SYNC")) {
+//                receiveDirectoryStructure();
+//            } else if (commandAndFile[0].equals("QUIT")) {
+//                System.exit(0);
 //            }
-//            for(FileDetails fileDetails : dir.fileDetailsList) {
-//                File inputFile = new File(path + "/" + fileDetails.fileName);
-//                sendFile(inputFile, reader);
-//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 //
+//    private void getf(DataInputStream reader, Directory dir) {
+//        try {
+//            Directory serverDir = receiveObject();
+//            if (fileInput.isDirectory()) {
+//                File[] files = fileInput.listFiles();
+//                for (File file : files) {
+//                    receiveFile(file, reader);
+//                }
+//            } else {
+//                receiveFile(fileInput, reader);
+//            }
 //
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //        }
+//
 //    }
 //
 //    private Directory receiveObject() {
@@ -274,11 +268,28 @@
 //        fileReader.close();
 //    }
 //
-//    private void receiveFile(File dir, DataInputStream ois) throws Exception {
-//        if(!dir.exists()){
-//            dir.createNewFile();
+//
+//
+//    private void putf(File fileInput, DataOutputStream reader) {
+//        try {
+//
+//            if (fileInput.isDirectory()) {
+//                File[] files = fileInput.listFiles();
+//                for (File file : files) {
+//                    sendFile(file, reader);
+//                }
+//            } else {
+//                sendFile(fileInput, reader);
+//            }
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
 //        }
-//        FileOutputStream wr = new FileOutputStream(dir, false);
+//
+//    }
+//
+//    private void receiveFile(File dir, DataInputStream ois) throws Exception {
+//        FileOutputStream wr = new FileOutputStream(dir);
 //        byte[] outBuffer = new byte[client.getReceiveBufferSize()];
 //        int bytesReceived = 0;
 //        long fileSize = ois.readLong();

@@ -1,6 +1,6 @@
-ServerThread.class
-Client.class
-FileDetails.class
-FileTreeModel.class
-Directory.class
-Server.class
+com/example/acn/ServerThread.class
+com/example/acn/Server.class
+com/example/acn/FileTreeModel.class
+com/example/acn/Directory.class
+com/example/acn/Client.class
+com/example/acn/FileDetails.class

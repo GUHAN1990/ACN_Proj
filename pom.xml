@@ -28,7 +28,7 @@
 
                     <archive>
                         <manifest>
-                            <mainClass>Server</mainClass>
+                            <mainClass>com.example.acn.Server</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
