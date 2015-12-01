@@ -91,5 +91,23 @@ public class Directory implements Serializable{
         return fileDetailsList.contains(fileDetails);
     }
 
+    public FileDetails getByFileName(String fileName) {
+        for(FileDetails fileDetails:fileDetailsList){
+            if(fileDetails.fileName.equals(fileName))
+            {
+                return fileDetails;
+            }
+        }
+        return null;
+    }
 
+    public Directory getByDirectoryName(String dirName) {
+        for(Directory directory:directoryList){
+            if(directory.directoryName.equals(dirName))
+            {
+                return directory;
+            }
+        }
+        return null;
+    }
 }

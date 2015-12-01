@@ -31,8 +31,8 @@ public class FileDetails implements Serializable{
 
         FileDetails that = (FileDetails) o;
 
-        if (fileSize != that.fileSize) return false;
-        if (dateModified != null ? !dateModified.equals(that.dateModified) : that.dateModified != null) return false;
+//        if (fileSize != that.fileSize) return false;
+//        if (dateModified != null ? !dateModified.equals(that.dateModified) : that.dateModified != null) return false;
         if (fileName != null ? !fileName.equals(that.fileName) : that.fileName != null) return false;
 
         return true;
@@ -44,5 +44,14 @@ public class FileDetails implements Serializable{
         result = 31 * result + (dateModified != null ? dateModified.hashCode() : 0);
         result = 31 * result + (int) (fileSize ^ (fileSize >>> 32));
         return result;
+    }
+
+    public boolean isLatestFile(FileDetails fileDetails){
+        return this.dateModified.after(fileDetails.dateModified);
+    }
+
+
+    public boolean isSame(FileDetails secondFile) {
+        return this.dateModified.equals(secondFile.dateModified);
     }
 }
